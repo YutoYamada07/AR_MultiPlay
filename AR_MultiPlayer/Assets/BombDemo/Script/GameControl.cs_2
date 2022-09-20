@@ -1,0 +1,218 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public static class GameVal
+{
+    public static GameControl gc;
+}
+
+public class GameControl : MonoBehaviour
+{
+    private GameTimer gameTimer;
+    public InterfaceReference ir;
+
+    [Header("Connection Data")]
+    public bool isHost;
+
+    [Header("Page Data")]
+    public int _pageNow;
+    public bool gameEnabled;
+
+
+
+    [Header("Player Data")]
+    public int score;
+    public int scorePerExplosion = 300;
+
+
+    private void Awake()
+    {
+        GameVal.gc = this;
+    }
+
+    #region Init
+    void Start()
+    {
+        gameTimer = GetComponent<GameTimer>();
+        gameTimer.Init();
+
+        Init();
+    }
+
+    public void Init()
+    {
+        score = 0;
+        gameEnabled = false;
+
+        ir.hostStartGameButton.SetActive(true);
+        ir.hostStartGameMsg.SetActive(true);
+        ir.clientStartGameButton.SetActive(true);
+        ir.clientStartGameMsg.SetActive(true);
+
+        PageChange(0);
+    }
+    #endregion
+
+
+    #region Game Flow
+
+    public void PageChange(int page)
+    {
+        _pageNow = page;
+        foreach (GameObject go in ir._pageObjs)
+            go.SetActive(false);
+        ir._pageObjs[_pageNow].SetActive(true);
+    }
+    public void ShowHideHostClientObjects()
+    {
+        ir.hostStartGameButton.SetActive(true);
+        ir.hostStartGameMsg.SetActive(true);
+        ir.clientStartGameButton.SetActive(true);
+        ir.clientStartGameMsg.SetActive(true);
+
+        foreach (GameObject go in ir._hostObjs)
+            go.SetActive(isHost);
+        foreach (GameObject go in ir._clientObjs)
+            go.SetActive(!isHost);
+    }
+
+
+
+    public void HostStart()
+    {
+        //Start AR Session
+        //Connect AR Network
+        Debug.Log("Host Connect to AR Network");
+
+
+        isHost = true;
+        ShowHideHostClientObjects();
+
+        //Go to Page 1 – Code
+        PageChange(1);
+    }
+
+    public void HostEnterGame()
+    {
+
+        //Hide timer before game start
+        gameTimer.timerBlock.SetActive(false);
+
+        //Go to Page 2 - Game Page
+        PageChange(2);
+    }
+
+    public void HostStartGame()
+    {
+        //Send Game Start to peer
+
+        //Hide msg
+        ir.hostStartGameButton.SetActive(false);
+        ir.hostStartGameMsg.SetActive(false);
+
+        //Game start
+        GameStart();
+    }
+
+    public void HostSendRestart()
+    {
+        //Go back to page 0
+        GameRestart();
+    }
+
+
+    public void ClientStart()
+    {
+        isHost = false;
+        ShowHideHostClientObjects();
+
+        //Go to Page 1 – Code
+        PageChange(1);
+    }
+    public void ClientConnectToGame()
+    {
+
+        //Hide timer before game start
+        gameTimer.timerBlock.SetActive(false);
+
+        //Go to Page 2 - Game Page
+        PageChange(2);
+    }
+    public void ClientStartGame()
+    {
+        //Hide msg
+        ir.clientStartGameButton.SetActive(false);
+        ir.clientStartGameMsg.SetActive(false);
+
+        //Game start
+        GameStart();
+    }
+
+
+
+    public void GameStart()
+    {
+        gameEnabled = true;
+
+        gameTimer.StartCounting();
+    }
+
+    public void GameRestart()
+    {
+        Init();
+
+        //Go to game start screen
+        PageChange(2);
+    }
+
+    public void GameResult()
+    {
+        gameEnabled = false;
+        ir.endScoreText.text = score.ToString();
+        //Check if I am winner
+
+        //Show result
+        DisplayResult(true);
+
+        //Go to page 4
+        PageChange(3);
+    }
+
+
+    public void GameReset()
+    {
+        Init();
+
+        //End AR session
+        //End Network session
+        Debug.Log("End AR Network");
+
+        //Go back to page 0
+        PageChange(0);
+    }
+
+
+
+
+    #endregion
+
+
+    #region Score
+
+    public void AddScore()
+    {
+        score += scorePerExplosion;
+        Debug.Log("Score now: " + score);
+    }
+
+    public void DisplayResult(bool _isWinner)
+    {
+        ir.winObj.SetActive(_isWinner);
+        ir.loseObj.SetActive(!_isWinner);
+    }
+
+    #endregion
+
+
+}
